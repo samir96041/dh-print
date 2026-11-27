@@ -6,22 +6,36 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:gen": "tsx scripts/gen-seed.ts",
+    "test": "tsx src/lib/pricing.test.ts && tsx src/lib/design.test.ts && tsx src/lib/render.test.ts && tsx src/lib/upload.test.ts"
   },
   "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.2",
+    "fabric": "^7.4.0",
+    "jszip": "^3.10.2",
+    "mupdf": "^1.28.6",
     "next": "16.4.6",
+    "papaparse": "^5.7.1",
+    "pdf-lib": "^1.17.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "resend": "^6.40.1",
+    "stripe": "^23.2.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
   reactCompiler: true,
+  serverExternalPackages: ["@resvg/resvg-js", "mupdf"],
+  outputFileTracingIncludes: { "/api/**": ["./public/fonts/**"] },
   turbopack: {
     rules: {
       "*.css": {
