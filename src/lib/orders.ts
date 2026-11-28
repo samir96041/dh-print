@@ -5,6 +5,7 @@ import { renderPng, renderPdf, mergeCsv, parseCsv, outputDir, pdfFirstPagePng } 
 import type { DesignDoc } from "./design";
 import type { Product } from "./catalog";
 import { quote } from "./pricing";
+import Stripe from "stripe";
 
 import { STAGES, type Stage } from "./stages";
 export { STAGES, type Stage };
@@ -84,4 +85,16 @@ export async function markPaid(orderId: string) {
   await sb.from("invoices").upsert({ order_id: orderId, number: `INV-${new Date().getFullYear()}-${String(n + 1).padStart(5, "0")}` }, { onConflict: "order_id" });
   await setStage(orderId, "proof", null, "Payment received; proof v1 ready");
   await notify(o.profiles?.email, `Order #${o.order_no} confirmed — proof ready`, `<p>Thanks! Your proof is ready to review: <a href="${site()}/orders/${orderId}">view proof</a>.</p>`);
+}
+
+/** Stripe Checkout (sandbox or live, by key) for an unpaid order; webhook /api/stripe-webhook marks it paid. */
+export async function stripeCheckoutUrl(o: { id: string; order_no: number; total_cents: number }, email: string | undefined, origin: string) {
+  const base = process.env.NEXT_PUBLIC_SITE_URL || origin;
+  const session = await new Stripe(process.env.STRIPE_SECRET_KEY!).checkout.sessions.create({
+    mode: "payment", customer_email: email, client_reference_id: o.id, metadata: { order_id: o.id },
+    line_items: [{ quantity: 1, price_data: { currency: "gbp", unit_amount: o.total_cents, product_data: { name: `DH Print order #${o.order_no} (inc. VAT)` } } }],
+    success_url: `${base}/orders/${o.id}?paid=1`, cancel_url: `${base}/orders/${o.id}`,
+  });
+  await supabaseAdmin().from("orders").update({ stripe_session: session.id }).eq("id", o.id);
+  return session.url!;
 }

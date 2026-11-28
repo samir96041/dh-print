@@ -13,9 +13,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { action, note } = await req.json();
   if (!["approve", "changes"].includes(action)) return NextResponse.json({ error: "Bad action" }, { status: 400 });
   const sb = supabaseAdmin();
-  const { data: proof } = await sb.from("proofs").select("*, order_items(id, order_id, orders(user_id, order_no))").eq("id", id).single();
+  const { data: proof } = await sb.from("proofs").select("*, order_items(id, order_id, orders(user_id, order_no, paid))").eq("id", id).single();
   const order = proof?.order_items?.orders;
   if (!proof || order?.user_id !== user.id) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!order.paid) return NextResponse.json({ error: "Please complete payment before approving the proof" }, { status: 402 });
   if (proof.status !== "pending") return NextResponse.json({ error: "This proof version is no longer open" }, { status: 409 });
   if (action === "changes" && !String(note ?? "").trim()) return NextResponse.json({ error: "Please describe the changes you need" }, { status: 400 });
 

@@ -24,7 +24,14 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
 
   return (
     <div className="mx-auto max-w-4xl px-4 pt-10">
-      {paid && <p className="panel p-3 mb-4 bg-[#e8f5e9] text-sm">Payment received — your proof is ready below.</p>}
+      {paid && (o.paid
+        ? <p className="panel p-3 mb-4 bg-[#e8f5e9] text-sm">Payment received — your proof is ready below.</p>
+        : <p className="panel p-3 mb-4 text-sm">Payment is being confirmed by Stripe — refresh in a few seconds.</p>)}
+      {!o.paid && !paid && o.user_id === user.id && process.env.STRIPE_SECRET_KEY && (
+        <form method="POST" action={`/api/orders/${o.id}/pay`} className="panel p-3 mb-4 flex items-center justify-between gap-3 text-sm">
+          <span>This order is awaiting payment. Pay to approve your proof and send it to production.</span>
+          <button className="btn !py-1.5">Pay now</button>
+        </form>)}
       <p className="mono text-xs uppercase tracking-widest text-muted">Order #{o.order_no}</p>
       <h1 className="display text-4xl font-bold">{money(o.total_cents)} <span className="text-base font-medium text-muted">inc. VAT · {o.paid ? "paid" : "awaiting payment"}</span></h1>
       <ol className="flex flex-wrap gap-1 my-6" aria-label="Order progress">
@@ -40,7 +47,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
                   <span className="mono text-xs border border-ink px-1.5 uppercase">{p.status.replace("_", " ")}</span></div>
                 {p.url && /* eslint-disable-next-line @next/next/no-img-element */ <img src={p.url} alt={`Proof v${p.version}`} className="border border-ink max-h-80 bg-white" />}
                 {p.change_note && <p className="text-sm mt-1 text-muted">Your note: “{p.change_note}”</p>}
-                {idx === 0 && p.status === "pending" && <ProofActions proofId={p.id} />}
+                {idx === 0 && p.status === "pending" && o.paid && <ProofActions proofId={p.id} />}
                 {idx === 0 && p.status === "changes_requested" && (
                   <Link className="btn mt-3 inline-flex" href={`/design/${(it.products as { slug: string }).slug}?revise=${it.id}`}>Edit design → submit new version</Link>
                 )}

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { currentUser, supabaseAdmin } from "@/lib/supabase/server";
 import { getProducts } from "@/lib/products";
-import { createProof, markPaid, priceSelection, setStage } from "@/lib/orders";
+import { createProof, markPaid, priceSelection, setStage, stripeCheckoutUrl } from "@/lib/orders";
 import { parseCsv } from "@/lib/render";
 import type { DesignDoc } from "@/lib/design";
 
@@ -42,12 +41,5 @@ export async function POST(req: Request) {
     await markPaid(order.id);
     return NextResponse.json({ url: `/orders/${order.id}?paid=1` });
   }
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin;
-  const session = await new Stripe(process.env.STRIPE_SECRET_KEY).checkout.sessions.create({
-    mode: "payment", customer_email: user.email, client_reference_id: order.id, metadata: { order_id: order.id },
-    line_items: [{ quantity: 1, price_data: { currency: "gbp", unit_amount: q.total, product_data: { name: `${product.name} ×${qty} (order #${order.order_no}, inc. VAT)` } } }],
-    success_url: `${site}/orders/${order.id}?paid=1`, cancel_url: `${site}/orders/${order.id}`,
-  });
-  await sb.from("orders").update({ stripe_session: session.id }).eq("id", order.id);
-  return NextResponse.json({ url: session.url });
+  return NextResponse.json({ url: await stripeCheckoutUrl(order, user.email, new URL(req.url).origin) });
 }
